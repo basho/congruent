@@ -1,0 +1,6 @@
+[
+  {"command":"get","bucket":"Yg==","key":"aw=="},
+  {"command":"put","value":"Zm9v","bucket":"Yg==","key":"aw=="},
+  {"command":"delete","bucket":"Yg==","key":"aw=="},
+  {"command":"get","bucket":"Yg==","key":"aw=="}
+]

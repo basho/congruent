@@ -1,0 +1,5 @@
+[
+  {"command":"get","bucket":"b","key":"k"},
+  {"command":"put","value":"foo","bucket":"b","key":"k"},
+  {"command":"get","bucket":"b","key":"k"}
+]
