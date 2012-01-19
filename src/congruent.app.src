@@ -1,0 +1,11 @@
+{application, congruent,
+ [
+  {description, "Generic testing for Riak clients"},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {env, []}
+ ]}.
