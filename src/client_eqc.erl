@@ -7,7 +7,6 @@
 
 -module(client_eqc).
 
-
 -include_lib("eqc/include/eqc.hrl").
 -include_lib("eqc/include/eqc_statem.hrl").
 
@@ -22,7 +21,7 @@ initial_state() ->
 %% Command generator, S is the state
 command(S) ->
     oneof([
-           %% ping
+           ping,
            {get, bucket(), key()},
            {put, bucket(), key(), value()},
            {delete, bucket(), key()},
@@ -50,7 +49,7 @@ prop_clients() ->
                                                [extract_command(C) || C <- Cmds]),
                 %% Put client invocation here
                 %% Ruby
-                Command = lists:flatten(["rvm 1.9.3@ripple ruby /Users/sean/Development/ripple/riak-client/bin/riak-client-congruent -f ",
+                Command = lists:flatten(["rvm 1.9.3@ripple do ruby /Users/sean/Development/ripple/riak-client/bin/riak-client-congruent -f ",
                                          Filename,
                                          " -h 127.0.0.1:8098:8087"]),
                 Output = os:cmd(Command),
@@ -63,7 +62,8 @@ prop_clients() ->
                           ok = file:delete(Filename ++ ".out"),
                           aggregate(
                             aggregate_command_names(Cmds),
-                            equals([ Msg || {error, Msg} <- Results ], [])
+                            equals([ Msg || {error, Msg} <- Results ],
+                                   [])
                            )
                       end
                      ))
@@ -74,7 +74,7 @@ bucket() ->
     noshrink(elements(["b", "b1", "b2"])).
 
 key() ->
-    noshrink(?LET(I, int(), integer_to_list(I))).
+    noshrink(?LET(I, nat(), integer_to_list(I))).
 
 value() ->
     binary().

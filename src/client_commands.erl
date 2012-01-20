@@ -8,6 +8,8 @@ write_commands(Filename, Commands) ->
 
 to_json(List) when is_list(List) ->
     [to_json(C) || C <- List];
+to_json(ping) ->
+    {struct, [{command, ping}]};
 to_json({get,B,K}) ->
     {struct, [{command, get}] ++
          encode_bkey(B,K)};
