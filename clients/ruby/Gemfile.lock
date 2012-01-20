@@ -1,0 +1,23 @@
+GIT
+  remote: git://github.com/basho/riak-ruby-client.git
+  revision: fdb856141e7c0f865a6487932e7c524e98990043
+  specs:
+    riak-client (1.0.0.beta)
+      beefcake (~> 0.3.7)
+      builder (>= 2.1.2)
+      i18n (>= 0.4.0)
+      multi_json (~> 1.0.0)
+
+GEM
+  remote: http://rubygems.org/
+  specs:
+    beefcake (0.3.7)
+    builder (3.0.0)
+    i18n (0.6.0)
+    multi_json (1.0.4)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  riak-client!

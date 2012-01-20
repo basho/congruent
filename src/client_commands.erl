@@ -2,6 +2,36 @@
 
 -compile(export_all).
 
+-define(CLIENTS, [ruby]).
+-define(CLIENT_ROOT(C), filename:flatten([?CLIENTS_ROOT, "/", C])).
+-define(CLIENTS_ROOT,
+        %% filename:absname(filename:absname_join(code:where_is_file("client_commands.beam"),filename:join([
+        %%                                 "..", "..", "clients"])))
+        filename:absname("clients", filename:dirname(filename:dirname(code:which(?MODULE))))
+       ).
+
+invoke_all_clients(Filename) ->
+    [ {C, invoke_client(C, Filename)} || C <- ?CLIENTS ].
+
+invoke_client(ruby, Filename) ->
+    Filename1 = filename:absname(Filename),
+    ResultsFile = Filename1 ++ ".ruby.out",
+    Output = within_dir(?CLIENT_ROOT(ruby),
+               fun() ->
+                       Command = lists:flatten(["bundle exec ruby runner.rb -f ",
+                                                Filename1,
+                                                " -o ", ResultsFile,
+                                                " -h 127.0.0.1:8098:8087"]),
+                       os:cmd(Command)
+               end),
+    case file:consult(ResultsFile) of
+        {ok, Results} ->
+            ok = file:delete(ResultsFile),
+            {Output, Results};
+        {error, Error} ->
+            {Output, [{error, Error}]}
+    end.
+
 write_commands(Filename, Commands) ->
     Encoded = json2:encode(to_json(Commands)),
     file:write_file(Filename, Encoded).
@@ -15,10 +45,10 @@ to_json({get,B,K}) ->
          encode_bkey(B,K)};
 to_json({put,B,K,V}) ->
     {struct, [{command, put},
-              {value, base64:encode(V)}] ++ 
+              {value, base64:encode(V)}] ++
          encode_bkey(B,K)};
 to_json({delete,B,K}) ->
-    {struct, [{command, delete}] ++ 
+    {struct, [{command, delete}] ++
          encode_bkey(B,K)};
 to_json({keys,B}) ->
     {struct, [{command, keys}] ++
@@ -29,3 +59,10 @@ encode_bkey(B,K) ->
 
 encode_bucket(B) ->
     [{bucket, base64:encode(B)}].
+
+within_dir(Dir, Fun) ->
+    {ok, OldDir} = file:get_cwd(),
+    ok = file:set_cwd(Dir),
+    Result = Fun(),
+    ok = file:set_cwd(OldDir),
+    Result.

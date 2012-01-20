@@ -19,7 +19,7 @@ initial_state() ->
     #state{}.
 
 %% Command generator, S is the state
-command(S) ->
+command(_S) ->
     oneof([
            ping,
            {get, bucket(), key()},
@@ -45,28 +45,31 @@ prop_clients() ->
     ?FORALL(Cmds, commands(?MODULE),
             begin
                 Filename = io_lib:format("~w~w~w", tuple_to_list(now())),
+                %% Write out the command file
                 client_commands:write_commands(Filename,
                                                [extract_command(C) || C <- Cmds]),
-                %% Put client invocation here
-                %% Ruby
-                Command = lists:flatten(["rvm 1.9.3@ripple do ruby /Users/sean/Development/ripple/riak-client/bin/riak-client-congruent -f ",
-                                         Filename,
-                                         " -h 127.0.0.1:8098:8087"]),
-                Output = os:cmd(Command),
-                ?WHENFAIL(
-                   io:format("Command: ~s~nOutput: ~s~n", [Command, Output]),
-                   ?TRAPEXIT(
-                      begin
-                          {ok, Results} = file:consult(Filename ++ ".out"),
-                          ok = file:delete(Filename),
-                          ok = file:delete(Filename ++ ".out"),
-                          aggregate(
-                            aggregate_command_names(Cmds),
-                            equals([ Msg || {error, Msg} <- Results ],
-                                   [])
-                           )
-                      end
-                     ))
+
+                %% Invoke the clients against the command file
+                case catch client_commands:invoke_all_clients(Filename) of
+                    Results when is_list(Results) ->
+                        ?WHENFAIL(
+                           begin
+                               [ io:format("[~p] ~s~n~n [~p] ~p~n~n", [C,O,C,M]) || {C, {O, M}} <- Results ]
+                               %% io:format("Commands: ~p~nResults: ~p~n", [Cmds, Results]),
+                           end,
+                           begin
+                               ok = file:delete(Filename),
+                               aggregate(aggregate_command_names(Cmds),
+                                         equals([ {Client, Msg} || {Client, {_Output, Messages}} <- Results,
+                                                                   {error, Msg} <- Messages ],
+                                                [])
+                                )
+                           end
+                          );
+                    Foo ->
+                        io:format("Client invocation failed! ~p~n", [Foo]),
+                        false
+                end
             end).
 
 %% Generators

@@ -1,0 +1,3 @@
+source :rubygems
+
+gem 'riak-client', :git => "git://github.com/basho/riak-ruby-client.git"
