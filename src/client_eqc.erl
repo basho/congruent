@@ -49,14 +49,29 @@ prop_clients() ->
                 client_commands:write_commands(Filename,
                                                [extract_command(C) || C <- Cmds]),
                 %% Put client invocation here
-                ok = file:delete(Filename),
-                %% file:delete(Filename ++ ".out"),
-                true
+                %% Ruby
+                Command = lists:flatten(["rvm 1.9.3@ripple ruby /Users/sean/Development/ripple/riak-client/bin/riak-client-congruent -f ",
+                                         Filename,
+                                         " -h 127.0.0.1:8098:8087"]),
+                Output = os:cmd(Command),
+                ?WHENFAIL(
+                   io:format("Command: ~s~nOutput: ~s~n", [Command, Output]),
+                   ?TRAPEXIT(
+                      begin
+                          {ok, Results} = file:consult(Filename ++ ".out"),
+                          ok = file:delete(Filename),
+                          ok = file:delete(Filename ++ ".out"),
+                          aggregate(
+                            aggregate_command_names(Cmds),
+                            equals([ Msg || {error, Msg} <- Results ], [])
+                           )
+                      end
+                     ))
             end).
 
 %% Generators
 bucket() ->
-    noshrink(elements(["b", "b1", "b2","b3", "b4", "b5"])).
+    noshrink(elements(["b", "b1", "b2"])).
 
 key() ->
     noshrink(?LET(I, int(), integer_to_list(I))).
@@ -66,3 +81,13 @@ value() ->
 
 extract_command({set,_,Cmd}) ->
     Cmd.
+
+aggregate_command_names(Commands) ->
+    [ extract_command_name(Cmd) || Cmd <- Commands ].
+
+extract_command_name({set,_,Cmd}) ->
+    extract_command_name(Cmd);
+extract_command_name(Atom) when is_atom(Atom) ->
+    Atom;
+extract_command_name(Tuple) when is_tuple(Tuple) ->
+    element(1,Tuple).
