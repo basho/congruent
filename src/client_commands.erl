@@ -5,8 +5,6 @@
 -define(CLIENTS, [ruby]).
 -define(CLIENT_ROOT(C), filename:flatten([?CLIENTS_ROOT, "/", C])).
 -define(CLIENTS_ROOT,
-        %% filename:absname(filename:absname_join(code:where_is_file("client_commands.beam"),filename:join([
-        %%                                 "..", "..", "clients"])))
         filename:absname("clients", filename:dirname(filename:dirname(code:which(?MODULE))))
        ).
 
@@ -17,13 +15,13 @@ invoke_client(ruby, Filename) ->
     Filename1 = filename:absname(Filename),
     ResultsFile = Filename1 ++ ".ruby.out",
     Output = within_dir(?CLIENT_ROOT(ruby),
-               fun() ->
-                       Command = lists:flatten(["bundle exec ruby runner.rb -f ",
-                                                Filename1,
-                                                " -o ", ResultsFile,
-                                                " -h 127.0.0.1:8098:8087"]),
-                       os:cmd(Command)
-               end),
+                        fun() ->
+                                Command = lists:flatten(["bundle exec ruby runner.rb -f ",
+                                                         Filename1,
+                                                         " -o ", ResultsFile,
+                                                         " -h 127.0.0.1:8098:8087"]),
+                                os:cmd(Command)
+                        end),
     case file:consult(ResultsFile) of
         {ok, Results} ->
             ok = file:delete(ResultsFile),
