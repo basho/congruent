@@ -14,3 +14,6 @@ clients: $(CLIENTS)
 
 $(CLIENTS):
 	make -C clients/$@
+
+test: all
+	erl -noshell -pa deps/*/ebin -pa ebin -eval 'eqc:module(client_eqc).' -s init stop
