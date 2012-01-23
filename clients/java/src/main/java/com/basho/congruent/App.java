@@ -30,7 +30,7 @@ public class App
     public static void main( String[] args )
     {
        
-        Getopt g = new Getopt("RiakClientTest", args, "f:h:");
+        Getopt g = new Getopt("RiakClientTest", args, "f:h:o:");
         
         
         // Use Getopt to parse commands - Riak Node, client type, 
