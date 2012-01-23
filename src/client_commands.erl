@@ -2,7 +2,7 @@
 
 -compile(export_all).
 
--define(CLIENTS, [ruby]).
+-define(CLIENTS, [ruby,java]).
 -define(CLIENT_ROOT(C), filename:flatten([?CLIENTS_ROOT, "/", C])).
 -define(CLIENTS_ROOT,
         filename:absname("clients", filename:dirname(filename:dirname(code:which(?MODULE))))
@@ -28,7 +28,27 @@ invoke_client(ruby, Filename) ->
             {Output, Results};
         {error, Error} ->
             {Output, [{error, Error}]}
+    end;
+invoke_client(java, Filename) ->
+    Filename1 = filename:absname(Filename),
+    ResultsFile = Filename1 ++ ".java.out",
+    Output = within_dir(?CLIENT_ROOT(java),
+                        fun() ->
+                                Command = lists:flatten(["java -jar target/riak_client_test-1.0-SNAPSHOT-jar-with-dependencies.jar -f ",
+                                                         Filename1,
+                                                         " -o ", ResultsFile,
+                                                         " -h 127.0.0.1:8098:8087"]),
+                                os:cmd(Command)
+                        end),
+    case file:consult(ResultsFile) of
+        {ok, Results} ->
+            ok = file:delete(ResultsFile),
+            {Output, Results};
+        {error, Error} ->
+            {Output, [{error, Error}]}
     end.
+
+
 
 write_commands(Filename, Commands) ->
     Encoded = json2:encode(to_json(Commands)),
