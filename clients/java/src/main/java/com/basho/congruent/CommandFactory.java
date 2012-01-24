@@ -13,16 +13,6 @@ import org.codehaus.jackson.JsonNode;
  */
 public class CommandFactory 
 {
-    private static final CommandFactory factory = new CommandFactory();
-    
-    
-    private CommandFactory()
-    {}
-    
-    public static CommandFactory getInstance()
-    {
-        return factory;
-    }
     
     public RiakCommand createCommand(RawClient rawClient, JsonNode commandNode)
     {

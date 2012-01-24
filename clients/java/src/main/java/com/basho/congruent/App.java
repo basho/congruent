@@ -92,9 +92,13 @@ public class App
         
         FileWriter outputFileWriter = null;
         
+        CommandFactory commandFactory = new CommandFactory();
+        
         try 
         {
-
+            outputFileWriter = new FileWriter(new File(outFilename));
+            BufferedWriter bufferedWriter = new BufferedWriter(outputFileWriter);
+            
             ObjectMapper mapper = new ObjectMapper();
             JsonNode rootNode = mapper.readValue(new File(filename), JsonNode.class);
             
@@ -103,12 +107,14 @@ public class App
                 String commandName = currentNode.path("command").getTextValue();
                 
                 // get command from factory
-                RiakCommand currentCommand = 
-                        CommandFactory.getInstance().createCommand(rawClient,currentNode);
+                RiakCommand currentCommand =
+                        commandFactory.createCommand(rawClient,currentNode);
                 String result = currentCommand.execute();
-                System.out.println(result);
+                bufferedWriter.write(result);
+                bufferedWriter.newLine();
                 
             }
+            bufferedWriter.close();
         } 
         catch (FileNotFoundException ex) 
         {
@@ -119,7 +125,7 @@ public class App
         {
             System.out.println("IO exception: " + ex.getMessage());
         }
-        /*finally 
+        finally 
         {
             try 
             {
@@ -129,7 +135,7 @@ public class App
             {
                 System.out.println("Could not close output file: " + ex.getMessage());
             }
-        }*/
+        }
        
         
         System.exit(0);
