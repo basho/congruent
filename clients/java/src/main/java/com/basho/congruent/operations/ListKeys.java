@@ -2,29 +2,29 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.basho.congruent;
+package com.basho.congruent.operations;
 
-import com.basho.riak.client.http.response.RiakIORuntimeException;
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.basho.riak.client.RiakException;
+import com.basho.riak.client.bucket.Bucket;
 import org.apache.commons.codec.binary.Base64;
 
 /**
  *
  * @author roach
  */
-public class Keys extends RiakCommand 
+public class ListKeys extends RiakOperation 
 {
 
     @Override
     public String execute() 
     {
-        String bucket = new String(Base64.decodeBase64(commandNode.get("bucket").getTextValue()));
+        String bucketName = new String(Base64.decodeBase64(commandNode.get("bucket").getTextValue()));
         
         try 
         {
-            Iterable<String> keys = rawClient.listKeys(bucket);
+            Bucket bucket = riakClient.fetchBucket(bucketName).execute();
+            
+            Iterable<String> keys = bucket.keys();
             StringBuilder term = new StringBuilder("{ok,[");
             
             if (keys.iterator().hasNext())
@@ -40,15 +40,12 @@ public class Keys extends RiakCommand
             term.append("]}.");
             return term.toString();
             
-        } 
-        catch (IOException ex) 
+        }
+        catch (RiakException ex)
         {
             return "{error,\"" + ex.getMessage() + "\"}.";
         }
-        catch (RiakIORuntimeException ex)
-        {
-            return "{error,\"" + ex.getMessage() + "\"}.";
-        }
+        
     }
     
 }

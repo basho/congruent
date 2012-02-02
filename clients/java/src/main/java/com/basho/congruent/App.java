@@ -1,23 +1,13 @@
 package com.basho.congruent;
 
-import com.basho.riak.client.IRiakClient;
-import com.basho.riak.client.IRiakObject;
+import com.basho.congruent.operations.OperationFactory;
+import com.basho.congruent.operations.RiakOperation;
 import com.basho.riak.client.RiakException;
-import com.basho.riak.client.RiakFactory;
-import com.basho.riak.client.bucket.Bucket;
 import com.basho.riak.client.http.RiakClient;
 import com.basho.riak.client.raw.RawClient;
 import com.basho.riak.client.raw.http.HTTPClientAdapter;
 import gnu.getopt.Getopt;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.io.*;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 
@@ -27,7 +17,7 @@ import org.codehaus.jackson.map.ObjectMapper;
  */
 public class App 
 {
-    public static void main( String[] args )
+    public static void main( String[] args ) throws RiakException
     {
        
         Getopt g = new Getopt("RiakClientTest", args, "f:h:o:");
@@ -74,6 +64,15 @@ public class App
             System.out.println("Missing filename or riak URL");
             System.exit(-1);
         }
+        
+        String httpBaseUrl = riakOpts[0];
+        int httpPort = Integer.parseInt(riakOpts[1]);
+        int pbPort = Integer.parseInt(riakOpts[2]);
+        
+        
+        
+        
+        
         // Parse command input file (JSON) 
         // - base64 bucket/key/value
         // return list of command objects?
@@ -82,17 +81,10 @@ public class App
         
         outFilename = (outFilename == null) ?  filename + ".out" : outFilename;
         
-        // instantiate Riak client
-        String connectString = "http://" + riakOpts[0] + ":"
-                + riakOpts[1] + "/riak";
-                
-        RiakClient riakClient = new RiakClient(connectString);
-        RawClient rawClient = new HTTPClientAdapter(riakClient);
-        
         
         FileWriter outputFileWriter = null;
         
-        CommandFactory commandFactory = new CommandFactory();
+        OperationFactory operationFactory = new OperationFactory(httpBaseUrl, httpPort, pbPort);
         
         try 
         {
@@ -105,11 +97,11 @@ public class App
             for (JsonNode currentNode : rootNode)
             {
                 String commandName = currentNode.path("command").getTextValue();
-                
+                System.out.println(commandName);
                 // get command from factory
-                RiakCommand currentCommand =
-                        commandFactory.createCommand(rawClient,currentNode);
-                String result = currentCommand.execute();
+                RiakOperation currentOperation =
+                        operationFactory.createOperation(currentNode);
+                String result = currentOperation.execute();
                 bufferedWriter.write(result);
                 bufferedWriter.newLine();
                 
@@ -118,7 +110,7 @@ public class App
         } 
         catch (FileNotFoundException ex) 
         {
-             System.err.println("Input File not Found");
+             System.err.println(ex.getMessage());
              System.exit(-1);
         }
         catch (IOException ex) 

@@ -2,8 +2,11 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.basho.congruent;
+package com.basho.congruent.operations;
 
+import com.basho.riak.client.RiakException;
+import com.basho.riak.client.RiakRetryFailedException;
+import com.basho.riak.client.bucket.Bucket;
 import com.basho.riak.client.http.response.RiakIORuntimeException;
 import java.io.IOException;
 import java.util.logging.Level;
@@ -14,27 +17,25 @@ import org.apache.commons.codec.binary.Base64;
  *
  * @author roach
  */
-public class Delete extends RiakCommand 
+public class Delete extends RiakOperation 
 {
 
     @Override
     public String execute() 
     {
-        String bucket = new String(Base64.decodeBase64(commandNode.get("bucket").getTextValue()));
+        String bucketName = new String(Base64.decodeBase64(commandNode.get("bucket").getTextValue()));
         String key = new String(Base64.decodeBase64(commandNode.get("key").getTextValue()));
         try 
         {
-            rawClient.delete(bucket, key);
+            Bucket bucket = riakClient.fetchBucket(bucketName).execute();
+            bucket.delete(key).execute();
             return "ok.";
-        } 
-        catch (IOException ex) 
+        }
+        catch (RiakException ex)
         {
             return "{error,\"" + ex.getMessage() + "\"}.";
         }
-        catch (RiakIORuntimeException ex)
-        {
-            return "{error,\"" + ex.getMessage() + "\"}.";
-        }
+        
     }
     
 }

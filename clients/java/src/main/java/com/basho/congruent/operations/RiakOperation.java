@@ -2,24 +2,25 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.basho.congruent;
+package com.basho.congruent.operations;
 
-import com.basho.riak.client.raw.RawClient;
+import com.basho.riak.client.IRiakClient;
+import com.basho.riak.client.RiakRetryFailedException;
 import org.codehaus.jackson.JsonNode;
 
 /**
  *
  * @author roach
  */
-public abstract class RiakCommand 
+public abstract class RiakOperation 
 {
     
-    protected RawClient rawClient;
+    protected IRiakClient riakClient;
     protected JsonNode commandNode;
     
-    public void setClient(RawClient rawClient)
+    public void setClient(IRiakClient rawClient)
     {
-        this.rawClient = rawClient;
+        this.riakClient = rawClient;
     }
     
     public void setJson(JsonNode commandNode)
