@@ -4,6 +4,8 @@
  */
 package com.basho.congruent.operations;
 
+import com.basho.congruent.output.ErlangTerm;
+import com.basho.riak.client.IRiakClient;
 import com.basho.riak.client.RiakException;
 import java.util.Set;
 
@@ -17,32 +19,38 @@ public class ListBuckets extends RiakOperation
     @Override
     public String execute()
     {
-        try
+        
+        ErlangTerm term = new ErlangTerm(commandNode.get("command").getTextValue());
+        
+        for (String name : riakClientMap.keySet())
         {
-            Set<String> bucketList = riakClient.listBuckets();
-            
-            StringBuilder term = new StringBuilder("{ok,[");
-            
-            if (!bucketList.isEmpty())
+            IRiakClient client = riakClientMap.get(name);
+        
+            try
             {
-                for (String bucket : bucketList)
+                Set<String> bucketList = client.listBuckets();
+
+                if (!bucketList.isEmpty())
                 {
-                    term.append("\"").append(bucket).append("\"").append(",");
+                    for (String bucket : bucketList)
+                    {
+                        term.getProtoResult(name).addString(bucket);
+                    }
                 }
-                
-                term.deleteCharAt(term.length() - 1);
+                else
+                {
+                    term.getProtoResult(name).noData();
+                }
+
                 
             }
-            
-            term.append("]}.");
-            return term.toString();
-            
-            
+            catch (RiakException ex)
+            {
+                term.getProtoResult(name).fail(ex.getMessage());
+            }
         }
-        catch (RiakException ex)
-        {
-            return "{error,\"" + ex.getMessage() + "\"}.";
-        }
+        
+        return term.toString();
         
     }
     

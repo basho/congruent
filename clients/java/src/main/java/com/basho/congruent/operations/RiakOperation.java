@@ -16,15 +16,14 @@ import org.codehaus.jackson.JsonNode;
 public abstract class RiakOperation 
 {
     
-    protected IRiakClient riakClient;
-    protected final Map<String, IRiakClient> riakClientMap = 
-        new HashMap<String, IRiakClient>();
+    
+    protected Map<String, IRiakClient> riakClientMap;
     
     protected JsonNode commandNode;
     
-    public void setClient(IRiakClient rawClient)
+    public void setClientMap(Map<String,IRiakClient> cMap)
     {
-        this.riakClient = rawClient;
+        riakClientMap = cMap;
     }
     
     public void addClient(String name, IRiakClient client)

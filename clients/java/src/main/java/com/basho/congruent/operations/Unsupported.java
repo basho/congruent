@@ -4,6 +4,9 @@
  */
 package com.basho.congruent.operations;
 
+import com.basho.congruent.output.ErlangTerm;
+import com.basho.riak.client.IRiakClient;
+
 /**
  *
  * @author roach
@@ -14,7 +17,15 @@ public class Unsupported extends RiakOperation
     @Override
     public String execute() 
     {
-        return "unsupported.";
+        ErlangTerm term = new ErlangTerm(commandNode.get("command").getTextValue());
+        
+        for (String name : riakClientMap.keySet())
+        {
+            term.getProtoResult(name).fail("unsupported");
+        }
+        
+        return term.toString();
+        
     }
     
 }

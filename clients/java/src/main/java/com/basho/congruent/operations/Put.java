@@ -4,6 +4,8 @@
  */
 package com.basho.congruent.operations;
 
+import com.basho.congruent.output.ErlangTerm;
+import com.basho.riak.client.IRiakClient;
 import com.basho.riak.client.RiakRetryFailedException;
 import com.basho.riak.client.bucket.Bucket;
 import org.apache.commons.codec.binary.Base64;
@@ -22,18 +24,24 @@ public class Put extends RiakOperation
         String key = new String(Base64.decodeBase64(commandNode.get("key").getTextValue()));
         String value = new String(Base64.decodeBase64(commandNode.get("value").getTextValue()));
         
-        
-        try 
+        ErlangTerm term = new ErlangTerm(commandNode.get("command").getTextValue());
+
+        for (String name : riakClientMap.keySet())
         {
-            Bucket bucket = riakClient.fetchBucket(bucketName).execute();
-            bucket.store(key,value).execute();
-            return "ok.";
+            IRiakClient client = riakClientMap.get(name);
+        
+            try 
+            {
+                Bucket bucket = client.fetchBucket(bucketName).execute();
+                bucket.store(key,value).execute();
+                term.getProtoResult(name).noData();
+            }
+            catch (RiakRetryFailedException ex)
+            {
+                term.getProtoResult(name).fail(ex.getMessage());
+            } 
         }
-        catch (RiakRetryFailedException ex)
-        {
-            return "{error,\"" + ex.getMessage() + "\"}.";
-        } 
         
-        
+        return term.toString();
     }    
 }

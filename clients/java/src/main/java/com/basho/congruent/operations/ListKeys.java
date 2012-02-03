@@ -4,6 +4,8 @@
  */
 package com.basho.congruent.operations;
 
+import com.basho.congruent.output.ErlangTerm;
+import com.basho.riak.client.IRiakClient;
 import com.basho.riak.client.RiakException;
 import com.basho.riak.client.bucket.Bucket;
 import org.apache.commons.codec.binary.Base64;
@@ -20,31 +22,37 @@ public class ListKeys extends RiakOperation
     {
         String bucketName = new String(Base64.decodeBase64(commandNode.get("bucket").getTextValue()));
         
-        try 
+        ErlangTerm term = new ErlangTerm(commandNode.get("command").getTextValue());
+        
+        for (String name : riakClientMap.keySet())
         {
-            Bucket bucket = riakClient.fetchBucket(bucketName).execute();
-            
-            Iterable<String> keys = bucket.keys();
-            StringBuilder term = new StringBuilder("{ok,[");
-            
-            if (keys.iterator().hasNext())
+            IRiakClient client = riakClientMap.get(name);
+        
+            try 
             {
-                for (String k : keys)
-                {
-                    term.append("\"").append(k).append("\"").append(",");
-                }
+                Bucket bucket = client.fetchBucket(bucketName).execute();
+
+                Iterable<String> keys = bucket.keys();
                 
-                term.deleteCharAt(term.length() - 1);
+                if (keys.iterator().hasNext())
+                {
+                    for (String k : keys)
+                    {
+                        term.getProtoResult(name).addString(k);
+                    }
+                }
+                else
+                {
+                    term.getProtoResult(name).noData();
+                }
             }
-            
-            term.append("]}.");
-            return term.toString();
-            
+            catch (RiakException ex)
+            {
+                term.getProtoResult(name).fail(ex.getMessage());
+            }
         }
-        catch (RiakException ex)
-        {
-            return "{error,\"" + ex.getMessage() + "\"}.";
-        }
+        
+        return term.toString();
         
     }
     

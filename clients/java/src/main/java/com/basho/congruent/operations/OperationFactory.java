@@ -9,6 +9,7 @@ import com.basho.riak.client.RiakException;
 import com.basho.riak.client.RiakFactory;
 import com.basho.riak.client.raw.RawClient;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -21,7 +22,10 @@ import org.codehaus.jackson.JsonNode;
 public class OperationFactory 
 {
     
-    private IRiakClient httpClient;  
+    //private IRiakClient httpClient;  
+    
+    private static final Map<String, IRiakClient> clientMap =
+        new HashMap<String, IRiakClient>();
     
     private static final Map<String, Class<? extends RiakOperation>> operations = 
         new HashMap<String, Class<? extends RiakOperation>>();
@@ -33,7 +37,7 @@ public class OperationFactory
         operations.put("put", Put.class);
         operations.put("delete", Delete.class);
         operations.put("keys", ListKeys.class);
-        operations.put("listBuckets", ListBuckets.class);
+        operations.put("list_buckets", ListBuckets.class);
     }
     
     
@@ -42,14 +46,16 @@ public class OperationFactory
         String clientString = "http://" + baseUrl + ":"
                 + httpPort + "/riak";
         
-        httpClient = RiakFactory.httpClient(clientString);
-        
+        //httpClient = RiakFactory.httpClient(clientString);
+        clientMap.put("http", RiakFactory.httpClient(clientString));
+        clientMap.put("pb", RiakFactory.pbcClient());
         
     }
     
     public RiakOperation createOperation(JsonNode commandNode)
     {
-        String operationName = commandNode.path("command").getTextValue();
+        String operationName = 
+            commandNode.path("command").getTextValue().toLowerCase(Locale.US);
         
         RiakOperation c = null;
         
@@ -76,8 +82,8 @@ public class OperationFactory
            c = new Unsupported(); 
         }
         
-        c.setClient(httpClient);
-        c.addClient("HTTP Client", httpClient);
+        //c.setClient(httpClient);
+        c.setClientMap(clientMap);
         c.setJson(commandNode);
         
         return c;

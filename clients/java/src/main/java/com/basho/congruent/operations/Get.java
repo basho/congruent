@@ -4,6 +4,8 @@
  */
 package com.basho.congruent.operations;
 
+import com.basho.congruent.output.ErlangTerm;
+import com.basho.riak.client.IRiakClient;
 import com.basho.riak.client.IRiakObject;
 import com.basho.riak.client.RiakRetryFailedException;
 import com.basho.riak.client.bucket.Bucket;
@@ -28,75 +30,64 @@ public class Get extends RiakOperation {
         String bucketName = new String(Base64.decodeBase64(commandNode.get("bucket").getTextValue()));
         String key = new String(Base64.decodeBase64(commandNode.get("key").getTextValue()));
         
-        try 
+        ErlangTerm term = new ErlangTerm(commandNode.get("command").getTextValue());
+        
+        for (String name : riakClientMap.keySet())
         {
-            Bucket bucket = riakClient.fetchBucket(bucketName).execute();
-            
-            /* This gets a little weird because of how this interface is designed.
-             * If there's siblings, it's going to throw an exception because we
-             * aren't specifying a ConflictResolver (because we want to see the 
-             * siblings). The siblings are contained inside the exception
-             */
-            
-            List<IRiakObject> riakObjectList = new LinkedList<IRiakObject>();
-            
-            try
+            IRiakClient client = riakClientMap.get(name);
+  
+            try 
             {
-                IRiakObject response = bucket.fetch(key).execute();
-                if (null != response)
-                    riakObjectList.add(response);
-            }
-            catch (UnresolvedConflictException urc)
-            {
-                for (IRiakObject ro : (Collection<IRiakObject>)urc.getSiblings())
+                Bucket bucket = client.fetchBucket(bucketName).execute();
+
+                /* This gets a little weird because of how this interface is designed.
+                * If there's siblings, it's going to throw an exception because we
+                * aren't specifying a ConflictResolver (because we want to see the 
+                * siblings). The siblings are contained inside the exception
+                */
+
+                List<IRiakObject> riakObjectList = new LinkedList<IRiakObject>();
+
+                try
                 {
-                    riakObjectList.add(ro);
+                    IRiakObject response = bucket.fetch(key).execute();
+                    if (null != response)
+                        riakObjectList.add(response);
                 }
-            }
-            
-            
-            StringBuilder term = new StringBuilder("{ok,");
-            
-            
-            if (riakObjectList.isEmpty())
-            {
-                term.append("not_found}.");
-            }
-            else
-            {
-                term.append("[");
-                
-                
-                for ( IRiakObject rObj : riakObjectList) 
+                catch (UnresolvedConflictException urc)
                 {
-                    term.append("<<");
-                    for (byte b : rObj.getValue())
+                    for (IRiakObject ro : (Collection<IRiakObject>)urc.getSiblings())
                     {
-                        term.append((int)b);
-                        term.append(",");
+                        riakObjectList.add(ro);
                     }
-                    term.deleteCharAt(term.length() - 1);
-                    term.append(">>,");
+                }
 
-                }   
+               
+                if (riakObjectList.isEmpty())
+                {
+                    term.getProtoResult(name).addString("not_found");
+                }
+                else
+                {
+                    for ( IRiakObject rObj : riakObjectList) 
+                    {
+                        term.getProtoResult(name).addByteArray(rObj.getValue());
+                    }   
 
-                term.deleteCharAt(term.length() - 1);
+                }
 
-                               
-                term.append("]}.");
             }
-            
-            return term.toString();
-            
+            catch (RiakRetryFailedException ex)
+            {
+                term.getProtoResult(name).fail(ex.getMessage());
+            }
+            catch (RiakIORuntimeException ex)
+            {
+                term.getProtoResult(name).fail(ex.getMessage());
+            }
         }
-        catch (RiakRetryFailedException ex)
-        {
-            return "{error,\"" + ex.getMessage() + "\"}.";
-        }
-        catch (RiakIORuntimeException ex)
-        {
-            return "{error,\"" + ex.getMessage() + "\"}.";
-        }
+        
+        return term.toString();
         
     }
     

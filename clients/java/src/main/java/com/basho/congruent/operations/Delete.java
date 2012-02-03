@@ -4,13 +4,10 @@
  */
 package com.basho.congruent.operations;
 
+import com.basho.congruent.output.ErlangTerm;
+import com.basho.riak.client.IRiakClient;
 import com.basho.riak.client.RiakException;
-import com.basho.riak.client.RiakRetryFailedException;
 import com.basho.riak.client.bucket.Bucket;
-import com.basho.riak.client.http.response.RiakIORuntimeException;
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.apache.commons.codec.binary.Base64;
 
 /**
@@ -25,17 +22,33 @@ public class Delete extends RiakOperation
     {
         String bucketName = new String(Base64.decodeBase64(commandNode.get("bucket").getTextValue()));
         String key = new String(Base64.decodeBase64(commandNode.get("key").getTextValue()));
-        try 
+        
+        /*
+         * erlang term will look like:
+         * { command, [{ protocol, { ok, [ data ]}}, ...]  }
+         * { command, [{ protocol, {error, "string"}}, ... ] } 
+         */ 
+        
+        
+        ErlangTerm term = new ErlangTerm(commandNode.get("command").getTextValue());
+        
+        for (String name : riakClientMap.keySet())
         {
-            Bucket bucket = riakClient.fetchBucket(bucketName).execute();
-            bucket.delete(key).execute();
-            return "ok.";
-        }
-        catch (RiakException ex)
-        {
-            return "{error,\"" + ex.getMessage() + "\"}.";
+            IRiakClient client = riakClientMap.get(name);
+       
+            try 
+            {
+                Bucket bucket = client.fetchBucket(bucketName).execute();
+                bucket.delete(key).execute();
+                term.getProtoResult(name).noData();
+            }
+            catch (RiakException ex)
+            {
+                term.getProtoResult(name).fail(ex.getMessage());
+            }
         }
         
+        return term.toString();
     }
     
 }

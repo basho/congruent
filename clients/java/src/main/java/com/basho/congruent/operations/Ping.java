@@ -4,11 +4,9 @@
  */
 package com.basho.congruent.operations;
 
+import com.basho.congruent.output.ErlangTerm;
+import com.basho.riak.client.IRiakClient;
 import com.basho.riak.client.RiakException;
-import com.basho.riak.client.http.response.RiakIORuntimeException;
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 
 /**
@@ -20,18 +18,30 @@ public class Ping extends RiakOperation
     @Override
     public String execute() {
         
-        try
+        /*
+         * erlang term will look like:
+         * { command, [{ protocol, { ok, [ data ]}}, ...]  }
+         * { command, [{ protocol, {error, "string"}}, ... ] } 
+         */ 
+        
+        ErlangTerm term = new ErlangTerm(commandNode.get("command").getTextValue());
+        
+        for (String name : riakClientMap.keySet())
         {
-            riakClient.ping();
-            return "ok.";
+            IRiakClient client = riakClientMap.get(name);
+            try
+            {
+                client.ping();
+                term.getProtoResult(name).noData();
+            }
+            catch (RiakException ex)
+            {
+                term.getProtoResult(name).fail(ex.getMessage());
+            }
+        
         }
-        catch (RiakException ex)
-        {
-            return "{error,\"" + ex.getMessage() + "\"}.";
-        }
         
-        
-        
+        return term.toString();
         
     }
     
