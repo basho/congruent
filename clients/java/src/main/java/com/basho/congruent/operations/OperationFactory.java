@@ -8,6 +8,10 @@ import com.basho.riak.client.IRiakClient;
 import com.basho.riak.client.RiakException;
 import com.basho.riak.client.RiakFactory;
 import com.basho.riak.client.raw.RawClient;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.codehaus.jackson.JsonNode;
 
 /**
@@ -18,6 +22,20 @@ public class OperationFactory
 {
     
     private IRiakClient httpClient;  
+    
+    private static final Map<String, Class<? extends RiakOperation>> operations = 
+        new HashMap<String, Class<? extends RiakOperation>>();
+    
+    static
+    {
+        operations.put("ping", Ping.class);
+        operations.put("get", Get.class);
+        operations.put("put", Put.class);
+        operations.put("delete", Delete.class);
+        operations.put("keys", ListKeys.class);
+        operations.put("listBuckets", ListBuckets.class);
+    }
+    
     
     public OperationFactory(String baseUrl, int httpPort, int pbPort) throws RiakException
     {
@@ -35,34 +53,31 @@ public class OperationFactory
         
         RiakOperation c = null;
         
-        if (operationName.equalsIgnoreCase("ping"))
+        Class<? extends RiakOperation> clazz = 
+            operations.get(operationName);
+        
+        if (clazz != null)
         {
-            c = new Ping();
-        }
-        else if (operationName.equalsIgnoreCase("get"))
-        {
-            c = new Get();
-        }
-        else if (operationName.equalsIgnoreCase("put"))
-        {
-            c = new Put();
-        }
-        else if (operationName.equalsIgnoreCase("delete"))
-        {
-            c = new Delete();
-        }
-        else if (operationName.equalsIgnoreCase("keys"))
-        {
-            c = new ListKeys();
-        }
-        else if (operationName.equalsIgnoreCase("listBuckets"))
-        {
-            c = new ListBuckets();
+            try
+            {
+                c = clazz.newInstance();
+            }
+            catch (InstantiationException ex)
+            {
+                Logger.getLogger(OperationFactory.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            catch (IllegalAccessException ex)
+            {
+                Logger.getLogger(OperationFactory.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
         else
-            c = new Unsupported();
+        {
+           c = new Unsupported(); 
+        }
         
         c.setClient(httpClient);
+        c.addClient("HTTP Client", httpClient);
         c.setJson(commandNode);
         
         return c;

@@ -97,7 +97,7 @@ public class App
             for (JsonNode currentNode : rootNode)
             {
                 String commandName = currentNode.path("command").getTextValue();
-                System.out.println(commandName);
+                //System.out.println(commandName);
                 // get command from factory
                 RiakOperation currentOperation =
                         operationFactory.createOperation(currentNode);

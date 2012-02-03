@@ -5,7 +5,8 @@
 package com.basho.congruent.operations;
 
 import com.basho.riak.client.IRiakClient;
-import com.basho.riak.client.RiakRetryFailedException;
+import java.util.HashMap;
+import java.util.Map;
 import org.codehaus.jackson.JsonNode;
 
 /**
@@ -16,11 +17,19 @@ public abstract class RiakOperation
 {
     
     protected IRiakClient riakClient;
+    protected final Map<String, IRiakClient> riakClientMap = 
+        new HashMap<String, IRiakClient>();
+    
     protected JsonNode commandNode;
     
     public void setClient(IRiakClient rawClient)
     {
         this.riakClient = rawClient;
+    }
+    
+    public void addClient(String name, IRiakClient client)
+    {
+        riakClientMap.put(name, client);
     }
     
     public void setJson(JsonNode commandNode)

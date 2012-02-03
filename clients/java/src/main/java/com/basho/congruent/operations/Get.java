@@ -7,16 +7,11 @@ package com.basho.congruent.operations;
 import com.basho.riak.client.IRiakObject;
 import com.basho.riak.client.RiakRetryFailedException;
 import com.basho.riak.client.bucket.Bucket;
-import com.basho.riak.client.bucket.FetchBucket;
 import com.basho.riak.client.cap.UnresolvedConflictException;
 import com.basho.riak.client.http.response.RiakIORuntimeException;
-import com.basho.riak.client.raw.RiakResponse;
-import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.apache.commons.codec.binary.Base64;
 
 /**
@@ -29,8 +24,10 @@ public class Get extends RiakOperation {
     public String execute() 
     {
     
+        
         String bucketName = new String(Base64.decodeBase64(commandNode.get("bucket").getTextValue()));
         String key = new String(Base64.decodeBase64(commandNode.get("key").getTextValue()));
+        
         try 
         {
             Bucket bucket = riakClient.fetchBucket(bucketName).execute();
@@ -100,6 +97,9 @@ public class Get extends RiakOperation {
         {
             return "{error,\"" + ex.getMessage() + "\"}.";
         }
+        
     }
+    
+    
     
 }
