@@ -30,62 +30,58 @@ public class Get extends RiakOperation {
         String bucketName = new String(Base64.decodeBase64(commandNode.get("bucket").getTextValue()));
         String key = new String(Base64.decodeBase64(commandNode.get("key").getTextValue()));
         
-        ErlangTerm term = new ErlangTerm(commandNode.get("command").getTextValue());
+        ErlangTerm term = new ErlangTerm(commandName, protocolName);
         
-        for (String name : riakClientMap.keySet())
+        try 
         {
-            IRiakClient client = riakClientMap.get(name);
-  
-            try 
+            Bucket bucket = client.fetchBucket(bucketName).execute();
+
+            /* This gets a little weird because of how this interface is designed.
+            * If there's siblings, it's going to throw an exception because we
+            * aren't specifying a ConflictResolver (because we want to see the 
+            * siblings). The siblings are contained inside the exception
+            */
+
+            List<IRiakObject> riakObjectList = new LinkedList<IRiakObject>();
+
+            try
             {
-                Bucket bucket = client.fetchBucket(bucketName).execute();
-
-                /* This gets a little weird because of how this interface is designed.
-                * If there's siblings, it's going to throw an exception because we
-                * aren't specifying a ConflictResolver (because we want to see the 
-                * siblings). The siblings are contained inside the exception
-                */
-
-                List<IRiakObject> riakObjectList = new LinkedList<IRiakObject>();
-
-                try
+                IRiakObject response = bucket.fetch(key).execute();
+                if (null != response)
+                    riakObjectList.add(response);
+            }
+            catch (UnresolvedConflictException urc)
+            {
+                for (IRiakObject ro : (Collection<IRiakObject>)urc.getSiblings())
                 {
-                    IRiakObject response = bucket.fetch(key).execute();
-                    if (null != response)
-                        riakObjectList.add(response);
+                    riakObjectList.add(ro);
                 }
-                catch (UnresolvedConflictException urc)
-                {
-                    for (IRiakObject ro : (Collection<IRiakObject>)urc.getSiblings())
-                    {
-                        riakObjectList.add(ro);
-                    }
-                }
+            }
 
-               
-                if (riakObjectList.isEmpty())
-                {
-                    term.getProtoResult(name).addString("not_found");
-                }
-                else
-                {
-                    for ( IRiakObject rObj : riakObjectList) 
-                    {
-                        term.getProtoResult(name).addByteArray(rObj.getValue());
-                    }   
 
-                }
+            if (riakObjectList.isEmpty())
+            {
+                term.addStringToResultData("not_found");
+            }
+            else
+            {
+                for ( IRiakObject rObj : riakObjectList) 
+                {
+                    term.addByteArrayToResultData(rObj.getValue());
+                }   
 
             }
-            catch (RiakRetryFailedException ex)
-            {
-                term.getProtoResult(name).fail(ex.getMessage());
-            }
-            catch (RiakIORuntimeException ex)
-            {
-                term.getProtoResult(name).fail(ex.getMessage());
-            }
+
         }
+        catch (RiakRetryFailedException ex)
+        {
+            term.failOperation(ex.getMessage());
+        }
+        catch (RiakIORuntimeException ex)
+        {
+            term.failOperation(ex.getMessage());
+        }
+        
         
         return term.toString();
         

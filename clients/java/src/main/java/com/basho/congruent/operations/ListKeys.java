@@ -22,35 +22,31 @@ public class ListKeys extends RiakOperation
     {
         String bucketName = new String(Base64.decodeBase64(commandNode.get("bucket").getTextValue()));
         
-        ErlangTerm term = new ErlangTerm(commandNode.get("command").getTextValue());
+        ErlangTerm term = new ErlangTerm(commandName, protocolName);
         
-        for (String name : riakClientMap.keySet())
+        try 
         {
-            IRiakClient client = riakClientMap.get(name);
-        
-            try 
-            {
-                Bucket bucket = client.fetchBucket(bucketName).execute();
+            Bucket bucket = client.fetchBucket(bucketName).execute();
 
-                Iterable<String> keys = bucket.keys();
-                
-                if (keys.iterator().hasNext())
+            Iterable<String> keys = bucket.keys();
+
+            if (keys.iterator().hasNext())
+            {
+                for (String k : keys)
                 {
-                    for (String k : keys)
-                    {
-                        term.getProtoResult(name).addString(k);
-                    }
-                }
-                else
-                {
-                    term.getProtoResult(name).noData();
+                    term.addStringToResultData(k);
                 }
             }
-            catch (RiakException ex)
+            else
             {
-                term.getProtoResult(name).fail(ex.getMessage());
+                term.noResultData();
             }
         }
+        catch (RiakException ex)
+        {
+            term.failOperation(ex.getMessage());
+        }
+        
         
         return term.toString();
         

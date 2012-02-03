@@ -5,7 +5,6 @@
 package com.basho.congruent.operations;
 
 import com.basho.congruent.output.ErlangTerm;
-import com.basho.riak.client.IRiakClient;
 import com.basho.riak.client.RiakException;
 import com.basho.riak.client.bucket.Bucket;
 import org.apache.commons.codec.binary.Base64;
@@ -30,23 +29,19 @@ public class Delete extends RiakOperation
          */ 
         
         
-        ErlangTerm term = new ErlangTerm(commandNode.get("command").getTextValue());
-        
-        for (String name : riakClientMap.keySet())
-        {
-            IRiakClient client = riakClientMap.get(name);
+        ErlangTerm term = new ErlangTerm(commandName, protocolName);
        
-            try 
-            {
-                Bucket bucket = client.fetchBucket(bucketName).execute();
-                bucket.delete(key).execute();
-                term.getProtoResult(name).noData();
-            }
-            catch (RiakException ex)
-            {
-                term.getProtoResult(name).fail(ex.getMessage());
-            }
+        try 
+        {
+            Bucket bucket = client.fetchBucket(bucketName).execute();
+            bucket.delete(key).execute();
+            term.noResultData();
         }
+        catch (RiakException ex)
+        {
+            term.failOperation(ex.getMessage());
+        }
+        
         
         return term.toString();
     }

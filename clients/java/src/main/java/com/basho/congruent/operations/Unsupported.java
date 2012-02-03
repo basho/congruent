@@ -5,7 +5,6 @@
 package com.basho.congruent.operations;
 
 import com.basho.congruent.output.ErlangTerm;
-import com.basho.riak.client.IRiakClient;
 
 /**
  *
@@ -17,12 +16,9 @@ public class Unsupported extends RiakOperation
     @Override
     public String execute() 
     {
-        ErlangTerm term = new ErlangTerm(commandNode.get("command").getTextValue());
+        ErlangTerm term = new ErlangTerm(commandName, protocolName);
         
-        for (String name : riakClientMap.keySet())
-        {
-            term.getProtoResult(name).fail("unsupported");
-        }
+        term.failOperation("unsupported");
         
         return term.toString();
         

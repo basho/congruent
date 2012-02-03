@@ -4,3 +4,4 @@ Bucket.delete() returns Void object
 No way of knowing if your bucket exists already or not - IRiakClient.fetchBucket(). execute always succeeds 
 Specifying an R on read > N with an HTTP connection returns as if nothing is there, rather than an error/exception
 See which URLs the HTTP client is using
+status (stats) is not supported

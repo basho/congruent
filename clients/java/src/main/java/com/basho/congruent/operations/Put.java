@@ -24,23 +24,18 @@ public class Put extends RiakOperation
         String key = new String(Base64.decodeBase64(commandNode.get("key").getTextValue()));
         String value = new String(Base64.decodeBase64(commandNode.get("value").getTextValue()));
         
-        ErlangTerm term = new ErlangTerm(commandNode.get("command").getTextValue());
+        ErlangTerm term = new ErlangTerm(commandName, protocolName);
 
-        for (String name : riakClientMap.keySet())
+        try 
         {
-            IRiakClient client = riakClientMap.get(name);
-        
-            try 
-            {
-                Bucket bucket = client.fetchBucket(bucketName).execute();
-                bucket.store(key,value).execute();
-                term.getProtoResult(name).noData();
-            }
-            catch (RiakRetryFailedException ex)
-            {
-                term.getProtoResult(name).fail(ex.getMessage());
-            } 
+            Bucket bucket = client.fetchBucket(bucketName).execute();
+            bucket.store(key,value).execute();
+            term.noResultData();
         }
+        catch (RiakRetryFailedException ex)
+        {
+            term.failOperation(ex.getMessage());
+        } 
         
         return term.toString();
     }    

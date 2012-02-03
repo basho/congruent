@@ -7,7 +7,6 @@ package com.basho.congruent.operations;
 import com.basho.riak.client.IRiakClient;
 import com.basho.riak.client.RiakException;
 import com.basho.riak.client.RiakFactory;
-import com.basho.riak.client.raw.RawClient;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -38,6 +37,7 @@ public class OperationFactory
         operations.put("delete", Delete.class);
         operations.put("keys", ListKeys.class);
         operations.put("list_buckets", ListBuckets.class);
+        operations.put("get_bucket_properties", GetBucketProperties.class);
     }
     
     
@@ -57,12 +57,16 @@ public class OperationFactory
         String operationName = 
             commandNode.path("command").getTextValue().toLowerCase(Locale.US);
         
+        IRiakClient client = 
+            clientMap.get(commandNode.path("proto").getTextValue().toLowerCase(Locale.US));
+        
+        
         RiakOperation c = null;
         
         Class<? extends RiakOperation> clazz = 
             operations.get(operationName);
         
-        if (clazz != null)
+        if (clazz != null && client != null)
         {
             try
             {
@@ -76,14 +80,16 @@ public class OperationFactory
             {
                 Logger.getLogger(OperationFactory.class.getName()).log(Level.SEVERE, null, ex);
             }
+        
+            c.setClient(client);
+            
+        
         }
         else
         {
            c = new Unsupported(); 
         }
         
-        //c.setClient(httpClient);
-        c.setClientMap(clientMap);
         c.setJson(commandNode);
         
         return c;

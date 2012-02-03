@@ -4,10 +4,8 @@
  */
 package com.basho.congruent.output;
 
-import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.Map;
-import java.util.Set;
+import java.util.List;
 
 /**
  *
@@ -16,28 +14,77 @@ import java.util.Set;
 public class ErlangTerm
 {
     
-    private Map<String, ProtocolResult> protoResultMap =
-        new HashMap<String, ProtocolResult>();
+    private final String command;
+    private final String protocolName;
+    private final List<String> data = new LinkedList<String>();
+    private boolean success = true;
+    private String errorMessage;
     
-    private String command;
     
-    
-    public ErlangTerm(String command)
+    public ErlangTerm(String command, String protocolName)
     {
         this.command = command;
+        this.protocolName = protocolName;
+        
     }
     
-    public ProtocolResult getProtoResult(String proto)
+    public void failOperation(String errorMessage)
     {
-        ProtocolResult pResult = protoResultMap.get(proto);
-        if (pResult == null)
+        this.errorMessage = errorMessage;
+        success = false;
+    }
+    
+    public void addStringToResultData(String string)
+    {
+        data.add("\"" + string + "\"");
+        
+    }
+    
+    public void addByteArrayToResultData(byte[] array)
+    {
+        StringBuilder binary = new StringBuilder();
+        binary.append("<<");
+        for (byte b : array)
         {
-            pResult = new ProtocolResult(proto);
-            protoResultMap.put(proto, pResult);
+            binary.append((int)b);
+            binary.append(",");
+        }
+        binary.deleteCharAt(binary.length() - 1);
+        binary.append(">>");
+    
+        data.add(binary.toString());
+    
+    }
+    
+    public void addKeyValuePairToResults(String key, Object value)
+    {
+        StringBuilder sb = new StringBuilder("{").append(key).append(",");
+        if (value == null)
+        {
+            sb.append("null}");
+        }
+        else
+        {
+            if (value instanceof String)
+            {
+                sb.append("\"").append(value).append("\"}");
+            }
+            else
+            {
+                sb.append(value).append("}");
+            }
         }
         
-        return pResult;
-        
+        data.add(sb.toString());
+    }
+    
+    
+    
+     
+    
+    public void noResultData()
+    {
+        // no op
     }
     
     @Override
@@ -46,23 +93,31 @@ public class ErlangTerm
         StringBuilder term = new StringBuilder("{");
         
         term.append(command);
-        term.append(",[");
+        term.append(",").append(protocolName);
         
-        Set<String> protos = protoResultMap.keySet();
-        
-        if (!protos.isEmpty())
+        if (success)
         {
-            for (String proto : protoResultMap.keySet())
+            term.append(",ok,[");
+            
+            if (!data.isEmpty())
             {
-                ProtocolResult pr = protoResultMap.get(proto);
-                term.append(pr.toString()).append(",");
+                for (String s : data)
+                {
+                    term.append(s).append(",");
+                }
+                
+                term.deleteCharAt(term.length() - 1);
+                
             }
-        
-            term.deleteCharAt(term.length() -1);
+            
+            term.append("]}.");
+            
         }
-        
-        term.append("]}.");
-        
+        else
+        {
+            term.append(",error,\"").append(errorMessage).append("\"}.");
+        }
+       
         return term.toString();
         
         

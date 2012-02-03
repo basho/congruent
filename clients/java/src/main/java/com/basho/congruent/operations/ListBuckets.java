@@ -20,35 +20,31 @@ public class ListBuckets extends RiakOperation
     public String execute()
     {
         
-        ErlangTerm term = new ErlangTerm(commandNode.get("command").getTextValue());
+        ErlangTerm term = new ErlangTerm(commandName, protocolName);
         
-        for (String name : riakClientMap.keySet())
+        try
         {
-            IRiakClient client = riakClientMap.get(name);
-        
-            try
-            {
-                Set<String> bucketList = client.listBuckets();
+            Set<String> bucketList = client.listBuckets();
 
-                if (!bucketList.isEmpty())
-                {
-                    for (String bucket : bucketList)
-                    {
-                        term.getProtoResult(name).addString(bucket);
-                    }
-                }
-                else
-                {
-                    term.getProtoResult(name).noData();
-                }
-
-                
-            }
-            catch (RiakException ex)
+            if (!bucketList.isEmpty())
             {
-                term.getProtoResult(name).fail(ex.getMessage());
+                for (String bucket : bucketList)
+                {
+                    term.addStringToResultData(bucket);
+                }
             }
+            else
+            {
+                term.noResultData();
+            }
+
+
         }
+        catch (RiakException ex)
+        {
+            term.failOperation(ex.getMessage());
+        }
+        
         
         return term.toString();
         

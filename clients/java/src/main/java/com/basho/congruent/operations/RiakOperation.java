@@ -17,23 +17,27 @@ public abstract class RiakOperation
 {
     
     
-    protected Map<String, IRiakClient> riakClientMap;
+    protected IRiakClient client;
+    protected String commandName;
+    protected String protocolName;
+    
     
     protected JsonNode commandNode;
     
-    public void setClientMap(Map<String,IRiakClient> cMap)
+    public void setClient(IRiakClient client)
     {
-        riakClientMap = cMap;
-    }
-    
-    public void addClient(String name, IRiakClient client)
-    {
-        riakClientMap.put(name, client);
+        this.client = client;
     }
     
     public void setJson(JsonNode commandNode)
     {
         this.commandNode = commandNode;
+        
+        // Convenience as all the commands need these
+        this.commandName = 
+            commandNode.get("command").getTextValue();
+        this.protocolName =
+            commandNode.get("proto").getTextValue();
     }
     
     public abstract String execute();
