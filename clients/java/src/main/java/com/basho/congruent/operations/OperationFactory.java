@@ -38,6 +38,7 @@ public class OperationFactory
         operations.put("keys", ListKeys.class);
         operations.put("list_buckets", ListBuckets.class);
         operations.put("get_bucket_properties", GetBucketProperties.class);
+        operations.put("set_bucket_properties", SetBucketProperties.class);
     }
     
     

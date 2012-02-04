@@ -9,8 +9,6 @@ import com.basho.riak.client.RiakRetryFailedException;
 import com.basho.riak.client.bucket.Bucket;
 import com.basho.riak.client.cap.Quorum;
 import com.basho.riak.client.query.functions.NamedErlangFunction;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.apache.commons.codec.binary.Base64;
 
 /**
@@ -91,6 +89,11 @@ public class GetBucketProperties extends RiakOperation
                                           bucket.getYoungVClock());
             term.addKeyValuePairToResults("search_enabled",
                                           bucket.isSearchEnabled());
+            
+            
+            // TODO: pre and post commit hooks. Interfaces make
+            // this somewhat annoying
+            
             
         }
         catch (RiakRetryFailedException ex)
