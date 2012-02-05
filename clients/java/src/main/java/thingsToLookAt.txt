@@ -7,4 +7,4 @@ See which URLs the HTTP client is using
 status (stats) is not supported
 The Function Interface hierarchy is kinda useless in terms of functionality; instanceof is still needed to do anything  
 IRiakClient.updateBucket takes a bucket as argument but only copies the name and commit hooks into the returned writebucket
- 
+The FetchObject<T> is not very intuitive when just trying to use the defaults but you want to set properties 
