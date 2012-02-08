@@ -2,7 +2,7 @@
 
 -compile(export_all).
 
--define(CLIENTS, [ruby,java]).
+-define(CLIENTS, [ruby,java,python]).
 -define(CLIENT_ROOT(C), filename:flatten([?CLIENTS_ROOT, "/", C])).
 -define(CLIENTS_ROOT,
         filename:absname("clients", filename:dirname(filename:dirname(code:which(?MODULE))))
@@ -46,9 +46,25 @@ invoke_client(java, Filename) ->
             {Output, Results};
         {error, Error} ->
             {Output, [{error, Error}]}
+    end;
+invoke_client(python, Filename) ->
+    Filename1 = filename:absname(Filename),
+    ResultsFile = Filename1 ++ ".python.out",
+    Output = within_dir(?CLIENT_ROOT(python),
+                        fun() ->
+                                Command = lists:flatten(["python runner.py -f ",
+                                                         Filename1,
+                                                         " -o ", ResultsFile,
+                                                         " -h 127.0.0.1:8098:8087"]),
+                                os:cmd(Command)
+                        end),
+    case file:consult(ResultsFile) of
+        {ok, Results} ->
+            ok = file:delete(ResultsFile),
+            {Output, Results};
+        {error, Error} ->
+            {Output, [{error, Error}]}
     end.
-
-
 
 write_commands(Filename, Commands) ->
     Encoded = json2:encode(to_json(Commands)),
