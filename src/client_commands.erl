@@ -57,19 +57,19 @@ write_commands(Filename, Commands) ->
 to_json(List) when is_list(List) ->
     [to_json(C) || C <- List];
 to_json(ping) ->
-    {struct, [{command, ping}]};
+    {struct, [{command, ping},{proto, http}]};
 to_json({get,B,K}) ->
-    {struct, [{command, get}] ++
+    {struct, [{command, get},{proto, http}] ++
          encode_bkey(B,K)};
 to_json({put,B,K,V}) ->
-    {struct, [{command, put},
+    {struct, [{command, put},{proto, http},
               {value, base64:encode(V)}] ++
          encode_bkey(B,K)};
 to_json({delete,B,K}) ->
-    {struct, [{command, delete}] ++
+    {struct, [{command, delete},{proto, http}] ++
          encode_bkey(B,K)};
 to_json({keys,B}) ->
-    {struct, [{command, keys}] ++
+    {struct, [{command, keys},{proto, http}] ++
          encode_bucket(B)}.
 
 encode_bkey(B,K) ->

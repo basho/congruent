@@ -36,8 +36,13 @@ public abstract class RiakOperation
         // Convenience as all the commands need these
         this.commandName = 
             commandNode.get("command").getTextValue();
-        this.protocolName =
-            commandNode.get("proto").getTextValue();
+        
+        // if there's no proto in the JSON we're defaulting to http
+        if (commandNode.has("proto"))
+            this.protocolName =
+                commandNode.get("proto").getTextValue();
+        else
+            this.protocolName = "http";
     }
     
     public abstract String execute();

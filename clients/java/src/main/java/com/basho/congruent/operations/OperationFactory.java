@@ -58,9 +58,15 @@ public class OperationFactory
         String operationName = 
             commandNode.path("command").getTextValue().toLowerCase(Locale.US);
         
-        IRiakClient client = 
-            clientMap.get(commandNode.path("proto").getTextValue().toLowerCase(Locale.US));
+        // default to http proto if none specified
+        String proto = "http";
+        if (commandNode.has("proto"))
+            proto = commandNode.path("proto").getTextValue().toLowerCase(Locale.US);
         
+            
+        IRiakClient client = 
+            clientMap.get(proto);
+
         
         RiakOperation c = null;
         
